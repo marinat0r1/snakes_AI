@@ -30,7 +30,7 @@ public class MyBot_Mustapha implements Bot {
                 .sorted()
                 .toArray(Direction[]::new);
 
-        /* Just naïve greedy algorithm that tries not to die at each moment in time */
+        /* Just naive greedy algorithm that tries not to die at each moment in time */
         Direction[] notLosing = Arrays.stream(validMoves)
                 .filter(d -> head.moveTo(d).inBounds(mazeSize))             // Don't leave maze
                 .filter(d -> !opponent.elements.contains(head.moveTo(d)))   // Don't collide with opponent...
@@ -42,9 +42,4 @@ public class MyBot_Mustapha implements Bot {
         else return validMoves[0];
         /* ^^^ Cannot avoid losing here */
     }
-
-
-
-
-
 }
