@@ -5,21 +5,19 @@ import snakes.Coordinate;
 import snakes.Direction;
 import snakes.Snake;
 
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.Random;
+import java.util.*;
 
 public class MyBot implements Bot {
 
-    private static final Direction[] DIRECTIONS = new Direction[] {Direction.UP, Direction.DOWN, Direction.LEFT, Direction.RIGHT};
+    private final Random rnd = new Random();
+    private static final Direction[] DIRECTIONS = new Direction[]{Direction.UP, Direction.DOWN, Direction.LEFT, Direction.RIGHT};
 
     @Override
     /* choose the direction (stupidly) */
     public Direction chooseDirection(Snake snake, Snake opponent, Coordinate mazeSize, Coordinate apple) {
         Coordinate head = snake.getHead();
+        Coordinate headOpponent = opponent.getHead();
 
-        /* Get the coordinate of the second element of the snake's body
-         * to prevent going backwards */
         Coordinate afterHeadNotFinal = null;
         if (snake.body.size() >= 2) {
             Iterator<Coordinate> it = snake.body.iterator();
@@ -28,14 +26,26 @@ public class MyBot implements Bot {
         }
 
         final Coordinate afterHead = afterHeadNotFinal;
-
         /* The only illegal move is going backwards. Here we are checking for not doing it */
         Direction[] validMoves = Arrays.stream(DIRECTIONS)
-                .filter(d -> !head.moveTo(d).equals(afterHead)) // Filter out the backwards move
+                .filter(d -> !head.moveTo(d).equals(afterHead))
                 .sorted()
                 .toArray(Direction[]::new);
 
-        /* Just naive greedy algorithm that tries not to die at each moment in time */
+        Coordinate afterHeadNotFinalOp = null;
+        if (opponent.body.size() >= 2) {
+            Iterator<Coordinate> it = opponent.body.iterator();
+            it.next();
+            afterHeadNotFinalOp = it.next();
+        }
+
+        final Coordinate afterHeadOp = afterHeadNotFinalOp;
+        Direction[] validMovesOp = Arrays.stream(DIRECTIONS)
+                .filter(d -> !headOpponent.moveTo(d).equals(afterHeadOp))
+                .sorted()
+                .toArray(Direction[]::new);
+
+        /* Just naïve greedy algorithm that tries not to die at each moment in time */
         Direction[] notLosing = Arrays.stream(validMoves)
                 .filter(d -> head.moveTo(d).inBounds(mazeSize))             // Don't leave maze
                 .filter(d -> !opponent.elements.contains(head.moveTo(d)))   // Don't collide with opponent...
@@ -43,9 +53,39 @@ public class MyBot implements Bot {
                 .sorted()
                 .toArray(Direction[]::new);
 
+        Coordinate mazeMidPoint = new Coordinate(7,7);
 
-        if (notLosing.length > 0) return notLosing[(int) (Math.random() * notLosing.length-1)];
-        else return validMoves[(int) (Math.random() * validMoves.length-1)];
-        /* ^^^ Cannot avoid losing here */
+        if (notLosing.length > 0) {
+            double shortestDistanceToApple = Math.max(mazeSize.x, mazeSize.y) + 1;
+            Direction shortestDirectionToMazeMidPoint = null;
+
+            for (Direction dir : notLosing) {
+                double dist = calculateManhattanDistance(head.moveTo(dir), mazeMidPoint);
+
+                Snake new_snake = snake.clone();
+                new_snake.moveTo(dir, false);
+
+                boolean result = true;
+                for (Direction dOp : validMovesOp) {
+                    Snake new_opponent = opponent.clone();
+                    new_opponent.moveTo(dOp, false);
+
+                    result = result & !new_opponent.elements.contains(new_snake.getHead());
+                }
+
+                if (dist < shortestDistanceToApple && result) {
+                    shortestDistanceToApple = dist;
+                    shortestDirectionToMazeMidPoint = dir;
+                }
+                }
+            if (shortestDirectionToMazeMidPoint != null) {
+                return shortestDirectionToMazeMidPoint;
+            }
+        } return notLosing[0];
     }
+
+    private double calculateManhattanDistance(Coordinate a, Coordinate b) {
+        return Math.sqrt(Math.abs(a.x - b.x) + Math.abs(a.y - b.y));
+    }
+
 }
