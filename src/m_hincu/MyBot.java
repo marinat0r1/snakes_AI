@@ -63,8 +63,10 @@ public class MyBot implements Bot {
             Tuple2<Direction, Double> toMazeMidPoint = calculateGivenDirection(mazeSize, notLosing, validMovesOp, head, snake, opponent, new Coordinate(7,7));
             if (toMazeMidPoint != null) {
                 return toMazeMidPoint.getFirst();
+            } else {
+                return notLosing[0];
             }
-        } return notLosing[0];
+        } return validMoves[0];
     }
 
     private double calculateManhattanDistance(Coordinate a, Coordinate b) {
