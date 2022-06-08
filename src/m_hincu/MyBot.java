@@ -53,33 +53,16 @@ public class MyBot implements Bot {
                 .sorted()
                 .toArray(Direction[]::new);
 
-        Coordinate mazeMidPoint = new Coordinate(7,7);
 
         if (notLosing.length > 0) {
-            double shortestDistanceToApple = Math.max(mazeSize.x, mazeSize.y) + 1;
-            Direction shortestDirectionToMazeMidPoint = null;
-
-            for (Direction dir : notLosing) {
-                double dist = calculateManhattanDistance(head.moveTo(dir), mazeMidPoint);
-
-                Snake new_snake = snake.clone();
-                new_snake.moveTo(dir, false);
-
-                boolean result = true;
-                for (Direction dOp : validMovesOp) {
-                    Snake new_opponent = opponent.clone();
-                    new_opponent.moveTo(dOp, false);
-
-                    result = result & !new_opponent.elements.contains(new_snake.getHead());
-                }
-
-                if (dist < shortestDistanceToApple && result) {
-                    shortestDistanceToApple = dist;
-                    shortestDirectionToMazeMidPoint = dir;
-                }
-                }
-            if (shortestDirectionToMazeMidPoint != null) {
-                return shortestDirectionToMazeMidPoint;
+            double shortestDistanceToAppleOpponent = calculateManhattanDistance(headOpponent, apple);
+            Tuple2<Direction, Double> toApple = calculateGivenDirection(mazeSize, notLosing, validMovesOp, head, snake, opponent, apple);
+            if (shortestDistanceToAppleOpponent > toApple.getSecond() && toApple.getFirst() != null) {
+                return toApple.getFirst();
+            }
+            Tuple2<Direction, Double> toMazeMidPoint = calculateGivenDirection(mazeSize, notLosing, validMovesOp, head, snake, opponent, new Coordinate(7,7));
+            if (toMazeMidPoint != null) {
+                return toMazeMidPoint.getFirst();
             }
         } return notLosing[0];
     }
@@ -88,4 +71,31 @@ public class MyBot implements Bot {
         return Math.sqrt(Math.abs(a.x - b.x) + Math.abs(a.y - b.y));
     }
 
+    private Tuple2<Direction, Double> calculateGivenDirection(Coordinate mazeSize, Direction[] notLosing, Direction[] validMovesOp, Coordinate head, Snake snake, Snake opponent, Coordinate destination) {
+        double shortestDistanceToDestination = Math.max(mazeSize.x, mazeSize.y) + 1;
+        Direction shortestDirectionToMazeDestination = null;
+
+        for (Direction dir : notLosing) {
+            double dist = calculateManhattanDistance(head.moveTo(dir), destination);
+
+            Snake new_snake = snake.clone();
+            new_snake.moveTo(dir, false);
+
+            boolean result = true;
+            for (Direction dOp : validMovesOp) {
+                Snake new_opponent = opponent.clone();
+                new_opponent.moveTo(dOp, false);
+
+                result = result & !new_opponent.elements.contains(new_snake.getHead());
+            }
+
+            if (dist < shortestDistanceToDestination && result) {
+                shortestDistanceToDestination = dist;
+                shortestDirectionToMazeDestination = dir;
+            }
+        }
+        return new Tuple2<>(shortestDirectionToMazeDestination, shortestDistanceToDestination);
+    }
+
 }
+
