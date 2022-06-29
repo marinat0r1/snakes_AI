@@ -66,6 +66,10 @@ public class MyBot implements Bot {
         } else {
             return validMoves[0];
         }
+
+        // Next steps: Use middle strategy for length 1-10
+        // Length 11-20 Use middle corner strategy
+        // Length > 21 Use outer corner strategy
     }
 
     private double calculateManhattanDistance(Coordinate a, Coordinate b) {
