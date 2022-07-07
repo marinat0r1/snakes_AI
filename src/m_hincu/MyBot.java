@@ -7,13 +7,28 @@ import snakes.Snake;
 
 import java.util.*;
 
+/**
+ * This class represents my implementation for the optimal bot to win the snake 2v2 game.
+ *
+ * @author Marin-Petru Hincu
+ */
 public class MyBot implements Bot {
 
     private final Random rnd = new Random();
     private static final Direction[] DIRECTIONS = new Direction[]{Direction.UP, Direction.DOWN, Direction.LEFT, Direction.RIGHT};
 
+    /**
+     * This Method contains all the main functionality, which decides which direction is chosen.
+     * It is called with each step the snake has to take and must return a direction which the snake will then follow.
+     *
+     * @param snake    Your snake's body with coordinates for each segment
+     * @param opponent Opponent snake's body with coordinates for each segment
+     * @param mazeSize Size of the board
+     * @param apple    Coordinate of an apple
+     * @return The direction which the snake will follow.
+     *
+     */
     @Override
-    /* choose the direction (stupidly) */
     public Direction chooseDirection(Snake snake, Snake opponent, Coordinate mazeSize, Coordinate apple) {
         Coordinate head = snake.getHead();
         Coordinate headOpponent = opponent.getHead();
@@ -26,7 +41,7 @@ public class MyBot implements Bot {
         }
 
         final Coordinate afterHead = afterHeadNotFinal;
-        /* The only illegal move is going backwards. Here we are checking for not doing it */
+        /* Directions are filtered, it is checked that the backwards direction is excluded */
         Direction[] validMoves = Arrays.stream(DIRECTIONS)
                 .filter(d -> !head.moveTo(d).equals(afterHead))
                 .sorted()
@@ -45,15 +60,20 @@ public class MyBot implements Bot {
                 .sorted()
                 .toArray(Direction[]::new);
 
-        /* Just naïve greedy algorithm that tries not to die at each moment in time */
+        /* Filtering out all directions that would lead to a loose */
         Direction[] notLosing = Arrays.stream(validMoves)
                 .filter(d -> head.moveTo(d).inBounds(mazeSize))             // Don't leave maze
-                .filter(d -> !opponent.elements.contains(head.moveTo(d)))   // Don't collide with opponent...
-                .filter(d -> !snake.elements.contains(head.moveTo(d)))      // and yourself
+                .filter(d -> !opponent.elements.contains(head.moveTo(d)))   // Don't collide with opponent
+                .filter(d -> !snake.elements.contains(head.moveTo(d)))      // Don't collide with yourself
                 .sorted()
                 .toArray(Direction[]::new);
 
-
+        /**
+         * Here we decide whether the most optimal move is to go for the apple, or if it is better to circle around the middle.
+         * Whenever our snake has the chance to reach the apple and is closer to the apple than the opponent, it will go for the apple.
+         * If our snake has no possibility to reach the apple, or the opponent snake is closer to the apple,
+         * our snake will circle towards the maze midpoint to have a better position for the next apple.
+         */
         if (notLosing.length > 0) {
             double shortestDistanceToAppleOpponent = calculateManhattanDistance(headOpponent, apple);
             Tuple2<Direction, Double> toApple = calculateGivenDirection(mazeSize, notLosing, validMovesOp, head, snake, opponent, apple);
@@ -72,10 +92,32 @@ public class MyBot implements Bot {
         // Length > 21 Use outer corner strategy
     }
 
+    /**
+     * The manhattan distance between two coordinates is calculated and returned.
+     *
+     * @param a The coordinate of the starting point
+     * @param b The coordinate of the destination
+     * @return The manhattan distance is returned
+     */
     private double calculateManhattanDistance(Coordinate a, Coordinate b) {
         return Math.sqrt(Math.abs(a.x - b.x) + Math.abs(a.y - b.y));
     }
 
+
+    /**
+     * The shortest Direction to a given destination is calculated here as well as the shortest distance to this destination.
+     * The constraints of the game field as well as the position of the opponent snake is taken into account.
+     * The returned values can be used to further evaluate which move is the most optional in a given situation.
+     *
+     * @param mazeSize The size of the field - it has to be checked for the snake to not leave the field
+     * @param notLosing An array of directions containing all viable directions
+     * @param validMovesOp An array with all possible directions that don't leave the maze
+     * @param head The coordinate of our snakes head
+     * @param snake Out snake
+     * @param opponent The opponents snake
+     * @param destination The destination coordinate our snake wants to reach
+     * @return A 2D Tuple which returns the shortest distance as well as the optimal direction to reach the destination is returned
+     */
     private Tuple2<Direction, Double> calculateGivenDirection(Coordinate mazeSize, Direction[] notLosing, Direction[] validMovesOp, Coordinate head, Snake snake, Snake opponent, Coordinate destination) {
         double shortestDistanceToDestination = Math.max(mazeSize.x, mazeSize.y) + 1;
         Direction shortestDirectionToMazeDestination = null;
