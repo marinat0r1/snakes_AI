@@ -68,12 +68,37 @@ public class MyBot implements Bot {
                 .sorted()
                 .toArray(Direction[]::new);
 
-        /**
-         * Here we decide whether the most optimal move is to go for the apple, or if it is better to circle around the middle.
-         * Whenever our snake has the chance to reach the apple and is closer to the apple than the opponent, it will go for the apple.
-         * If our snake has no possibility to reach the apple, or the opponent snake is closer to the apple,
-         * our snake will circle towards the maze midpoint to have a better position for the next apple.
-         */
+
+        if (snake.elements.size() <= 7) {
+            return stageOneDirection(snake, opponent, mazeSize, apple, head, headOpponent, validMoves, validMovesOp, notLosing);
+        } else if (snake.elements.size() > 7 && snake.elements.size() < 15) {
+            return stageTwoDirection(snake, opponent, mazeSize, apple, head, headOpponent, validMoves, validMovesOp, notLosing);
+        } else {
+            return stageThreeDirection(snake, opponent, mazeSize, apple, head, headOpponent, validMoves, validMovesOp, notLosing);
+        }
+
+    }
+
+
+    /**
+     * Here we decide whether the most optimal move is to go for the apple, or if it is better to circle around the middle.
+     * Whenever our snake has the chance to reach the apple and is closer to the apple than the opponent, it will go for the apple.
+     * If our snake has no possibility to reach the apple, or the opponent snake is closer to the apple,
+     * our snake will circle towards the maze midpoint to have a better position for the next apple.
+     *
+     * @param snake
+     * @param opponent
+     * @param mazeSize
+     * @param apple
+     * @param head
+     * @param headOpponent
+     * @param validMoves
+     * @param validMovesOp
+     * @param notLosing
+     * @return
+     */
+
+    private Direction stageOneDirection(Snake snake, Snake opponent, Coordinate mazeSize, Coordinate apple, Coordinate head, Coordinate headOpponent, Direction[] validMoves, Direction[] validMovesOp, Direction[] notLosing) {
         if (notLosing.length > 0) {
             double shortestDistanceToAppleOpponent = calculateManhattanDistance(headOpponent, apple);
             Tuple2<Direction, Double> toApple = calculateGivenDirection(mazeSize, notLosing, validMovesOp, head, snake, opponent, apple);
@@ -86,10 +111,88 @@ public class MyBot implements Bot {
         } else {
             return validMoves[0];
         }
+    }
 
-        // Next steps: Use middle strategy for length 1-10
-        // Length 11-20 Use middle corner strategy
-        // Length > 21 Use outer corner strategy
+    /**
+     *
+     * @param snake
+     * @param opponent
+     * @param mazeSize
+     * @param apple
+     * @param head
+     * @param headOpponent
+     * @param validMoves
+     * @param validMovesOp
+     * @param notLosing
+     * @return
+     */
+    private Direction stageTwoDirection(Snake snake, Snake opponent, Coordinate mazeSize, Coordinate apple, Coordinate head, Coordinate headOpponent, Direction[] validMoves, Direction[] validMovesOp, Direction[] notLosing) {
+        if (notLosing.length > 0) {
+            double shortestDistanceToAppleOpponent = calculateManhattanDistance(headOpponent, apple);
+            Tuple2<Direction, Double> toApple = calculateGivenDirection(mazeSize, notLosing, validMovesOp, head, snake, opponent, apple);
+            if (shortestDistanceToAppleOpponent > toApple.getSecond() && toApple.getFirst() != null) {
+                return toApple.getFirst();
+            } else {
+                Tuple2<Direction, Double> toUpperLeftCorner = calculateGivenDirection(mazeSize, notLosing, validMovesOp, head, snake, opponent, new Coordinate(4,4));
+                Tuple2<Direction, Double> toLowerLeftCorner = calculateGivenDirection(mazeSize, notLosing, validMovesOp, head, snake, opponent, new Coordinate(4,10));
+                Tuple2<Direction, Double> toUpperRightCorner = calculateGivenDirection(mazeSize, notLosing, validMovesOp, head, snake, opponent, new Coordinate(10,4));
+                Tuple2<Direction, Double> toLowerRightCorner = calculateGivenDirection(mazeSize, notLosing, validMovesOp, head, snake, opponent, new Coordinate(10,10));
+
+                if (toUpperLeftCorner.getSecond() < toLowerLeftCorner.getSecond() && toUpperLeftCorner.getSecond() < toUpperRightCorner.getSecond() && toUpperLeftCorner.getSecond() < toLowerRightCorner.getSecond()){
+                    return toUpperLeftCorner.getFirst();
+                } else if (toLowerLeftCorner.getSecond() < toUpperLeftCorner.getSecond() && toLowerLeftCorner.getSecond() < toUpperRightCorner.getSecond() && toLowerLeftCorner.getSecond() < toLowerRightCorner.getSecond()){
+                    return toLowerLeftCorner.getFirst();
+                } else if (toUpperRightCorner.getSecond() < toUpperLeftCorner.getSecond() && toUpperRightCorner.getSecond() < toLowerLeftCorner.getSecond() && toUpperRightCorner.getSecond() < toLowerRightCorner.getSecond()){
+                    return toUpperRightCorner.getFirst();
+                } else if (toLowerRightCorner.getSecond() < toUpperLeftCorner.getSecond() && toLowerRightCorner.getSecond() < toLowerLeftCorner.getSecond() && toLowerRightCorner.getSecond() < toUpperRightCorner.getSecond()){
+                    return toLowerRightCorner.getFirst();
+                }
+                return toUpperLeftCorner.getFirst();
+            }
+        } else {
+            return validMoves[0];
+        }
+    }
+
+    /**
+     *
+     * @param snake
+     * @param opponent
+     * @param mazeSize
+     * @param apple
+     * @param head
+     * @param headOpponent
+     * @param validMoves
+     * @param validMovesOp
+     * @param notLosing
+     * @return
+     */
+    private Direction stageThreeDirection(Snake snake, Snake opponent, Coordinate mazeSize, Coordinate apple, Coordinate head, Coordinate headOpponent, Direction[] validMoves, Direction[] validMovesOp, Direction[] notLosing) {
+        if (notLosing.length > 0) {
+            double shortestDistanceToAppleOpponent = calculateManhattanDistance(headOpponent, apple);
+            Tuple2<Direction, Double> toApple = calculateGivenDirection(mazeSize, notLosing, validMovesOp, head, snake, opponent, apple);
+            if (shortestDistanceToAppleOpponent > toApple.getSecond() && toApple.getFirst() != null) {
+                return toApple.getFirst();
+            } else {
+                Tuple2<Direction, Double> toUpperLeftCorner = calculateGivenDirection(mazeSize, notLosing, validMovesOp, head, snake, opponent, new Coordinate(0,0));
+                Tuple2<Direction, Double> toLowerLeftCorner = calculateGivenDirection(mazeSize, notLosing, validMovesOp, head, snake, opponent, new Coordinate(0,14));
+                Tuple2<Direction, Double> toUpperRightCorner = calculateGivenDirection(mazeSize, notLosing, validMovesOp, head, snake, opponent, new Coordinate(14,0));
+                Tuple2<Direction, Double> toLowerRightCorner = calculateGivenDirection(mazeSize, notLosing, validMovesOp, head, snake, opponent, new Coordinate(14,14));
+
+                if (toUpperLeftCorner.getSecond() < toLowerLeftCorner.getSecond() && toUpperLeftCorner.getSecond() < toUpperRightCorner.getSecond() && toUpperLeftCorner.getSecond() < toLowerRightCorner.getSecond()){
+                    return toUpperLeftCorner.getFirst();
+                } else if (toLowerLeftCorner.getSecond() < toUpperLeftCorner.getSecond() && toLowerLeftCorner.getSecond() < toUpperRightCorner.getSecond() && toLowerLeftCorner.getSecond() < toLowerRightCorner.getSecond()){
+                    return toLowerLeftCorner.getFirst();
+                } else if (toUpperRightCorner.getSecond() < toUpperLeftCorner.getSecond() && toUpperRightCorner.getSecond() < toLowerLeftCorner.getSecond() && toUpperRightCorner.getSecond() < toLowerRightCorner.getSecond()){
+                    return toUpperRightCorner.getFirst();
+                } else if (toLowerRightCorner.getSecond() < toUpperLeftCorner.getSecond() && toLowerRightCorner.getSecond() < toLowerLeftCorner.getSecond() && toLowerRightCorner.getSecond() < toUpperRightCorner.getSecond()){
+                    return toLowerRightCorner.getFirst();
+                }
+                return toUpperLeftCorner.getFirst();
+            }
+        } else {
+            return validMoves[0];
+        }
     }
 
     /**
@@ -113,7 +216,7 @@ public class MyBot implements Bot {
      * @param notLosing An array of directions containing all viable directions
      * @param validMovesOp An array with all possible directions that don't leave the maze
      * @param head The coordinate of our snakes head
-     * @param snake Out snake
+     * @param snake Our snake
      * @param opponent The opponents snake
      * @param destination The destination coordinate our snake wants to reach
      * @return A 2D Tuple which returns the shortest distance as well as the optimal direction to reach the destination is returned
